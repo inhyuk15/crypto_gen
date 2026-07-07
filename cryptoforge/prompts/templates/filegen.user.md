@@ -18,7 +18,7 @@ macros to define: {{TARGET_MACROS}}
 functions to implement (exact signatures):
 {{TARGET_FUNCTIONS}}
 
-## Specification (source of algorithm logic)
+## Specification (the ONLY source of algorithm logic)
 {{SPEC}}
 
 Write the complete contents of `{{TARGET_PATH}}` now.
