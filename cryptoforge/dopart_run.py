@@ -35,6 +35,10 @@ RUN_TIMEOUT = int(os.environ.get('CRYPTOFORGE_RUN_TIMEOUT', '300'))
 def gen_op_h(o, op, prim):
     """<op>.h (generic→namespaced 매크로 매핑). do-part의 sed/grep 파이프 재현."""
     macros = sh(['grep','-E', f'{o}$|{o}\\(|{o}_', os.path.join(BASE,'MACROS')]).stdout
+    # 주의: 여기(=try.c 가 include 하는 generic 헤더)에 api.h 를 넣으면 안 된다. api.h 의
+    # include-guard 가 {op}.h 안에 sed 로 박제된 네임스페이스 상수 블록과 충돌해 그 상수가
+    # 통째로 suppress 된다. impl 에 raw CRYPTO_* 를 주는 건 impl 컴파일의 `-include api.h`
+    # 로 처리한다(impl TU 와 try.c TU 는 별개라 서로 안 샌다).
     lines = [f'#ifndef {o}_H', f'#define {o}_H', '', f'#include "{op}.h"', '']
     for m in macros.splitlines():
         mop = m.replace(o, op, 1)              # sed s/$o/$op/ (first occ)
@@ -152,6 +156,26 @@ def build_support(work, cc, keyed):
         objs += robjs
     return objs, None
 
+def _canonical_api(algodir):
+    """primitive 의 표준 api.h(=공개 CRYPTO_* 상수, 즉 인터페이스 B). ref 우선.
+    api.h 는 알고리즘 로직/함수 분해가 없는 순수 상수 헤더라 스코어러(D)가 제공해도
+    블랙박스 규약에 위배되지 않는다(D 는 이미 checksum 등 ground-truth 를 안다). 이렇게
+    권위있는 api.h 를 심으면 (a) 모델이 상수 값을 틀리는 confound 를 제거하고 (b) 모델이
+    api.h 를 안 만들거나 include 를 잊어도 CRYPTO_* 가 항상 해석된다. 코드(.c)는 읽지 않음."""
+    if not os.path.isdir(algodir):
+        return ''
+    cands = ['ref'] + sorted(d for d in os.listdir(algodir)
+                             if os.path.isdir(os.path.join(algodir, d)))
+    seen = set()
+    for c in cands:
+        if c in seen:
+            continue
+        seen.add(c)
+        p = os.path.join(algodir, c, 'api.h')
+        if os.path.isfile(p):
+            return open(p).read()
+    return ''
+
 def run(op, prim, impldir, keep=False):
     # (전역 상태 없음 → 스레드 병렬 안전)
     # 네임스페이스 3층 (do-part 규약):
@@ -176,8 +200,15 @@ def run(op, prim, impldir, keep=False):
         for f in glob.glob(impldir+'/*'):
             if f.endswith(('.c','.h','.cc','.cpp','.C','.inc','.S','.s')):
                 shutil.copy(f, work)
-        api_path = os.path.join(impldir,'api.h')
-        api_text = open(api_path).read() if os.path.isfile(api_path) else ''
+        # api.h 는 하네스가 표준 상수(B)로 권위있게 제공 → 모델의 api.h 를 덮어써서
+        # 상수 오타/누락 confound 제거, planner 규칙("빌드가 api.h 제공")을 실제로 참으로 만듦.
+        # 우선순위: 표준(ref) > 모델 것 > 빈 파일. work/api.h 를 '항상' 생성해
+        # crypto_<op>.h 의 `#include "api.h"` 가 절대 실패하지 않게 한다.
+        api_text = _canonical_api(algodir)
+        if not api_text:
+            api_path = os.path.join(impldir, 'api.h')
+            api_text = open(api_path).read() if os.path.isfile(api_path) else ''
+        open(os.path.join(work, 'api.h'), 'w').write(api_text)
         # 2) 하네스 파일 복사
         for f in ['try.c','measure.c']:
             shutil.copy(os.path.join(BASE, op, f), work)
@@ -209,10 +240,15 @@ def run(op, prim, impldir, keep=False):
                   if os.path.basename(f) not in
                   ('try.c','try-small.c','measure.c','try-anything.c','measure-anything.c',
                    'cpucycles_stub.c')]
+        # impl TU 에 raw CRYPTO_* 를 항상 주입: 실제 SUPERCOP impl 이 `#include "api.h"` 하는 것과
+        # 동치. 모델이 api.h include 를 깜빡하거나 엉뚱한 파일에 넣어도 상수가 해석됨. api.h 에는
+        # include-guard 가 있어 impl 이 명시적으로 또 include 해도 중복 안 되고, try.c TU 엔 안 붙어
+        # 네임스페이스 상수와 충돌하지 않음.
+        force_api = ['-include', os.path.join(work, 'api.h')]
         objs = []
         for c in impl_c:
             ob = c+'.o'
-            r = sh([*cc,'-DSUPERCOP',*nsdef,*inc,'-c',c,'-o',ob])
+            r = sh([*cc,'-DSUPERCOP',*nsdef,*inc,*force_api,'-c',c,'-o',ob])
             if r.returncode != 0:
                 return _res('IMPL_COMPILE_FAIL', f'{os.path.basename(c)}:\n{r.stderr[:1200]}')
             objs.append(ob)

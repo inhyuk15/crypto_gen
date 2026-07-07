@@ -14,7 +14,14 @@ COMMON = """\
   time, no PID, no addresses, no uninitialized memory, no undefined behavior.
 - All buffer sizes come from the CRYPTO_* interface constants (via "api.h"). Never hardcode
   a size that a constant already gives.
-- Length outputs written through pointers (e.g. *clen, *smlen, *mlen) must be set exactly."""
+- Length outputs written through pointers (e.g. *clen, *smlen, *mlen) must be set exactly.
+- In-place / overlap: the harness re-runs each function with an OUTPUT buffer that overlaps
+  or is identical to an INPUT buffer (e.g. the same pointer passed for output and for the
+  message, key, or associated data). Read every input byte you still need BEFORE you write
+  over it — copy an input into a local buffer first if the algorithm reuses it after output
+  starts. Wrong results under overlap fail the test even when the algorithm is otherwise correct.
+- Stay within the declared output length: write only the bytes the size constants / length
+  outputs permit. Writing past the end of an output buffer trips a memory-corruption check."""
 
 # keyed operation (randombytes 를 링크해 줌) 공통
 _RANDOMBYTES = """\
