@@ -1,0 +1,8 @@
+api_key.txt
+runs/
+__pycache__/
+*.pyc
+
+# render.py 가 찍는 알고리즘별 프롬프트(템플릿+데이터에서 재생성). 소스인 templates/ 는 유지.
+prompts/*/
+!prompts/templates/
