@@ -1,0 +1,676 @@
+# CAESAR submission: K����v2 
+
+Designed and submi�ed by: 
+
+Guido B������<sup>1</sup> Joan D�����<sup>1,2</sup> Michaël P������<sup>1</sup> Gilles V��A�����<sup>1</sup> Ronny V��K���<sup>1</sup> 
+
+http://keyak.noekeon.org/ keyak (at) noekeon (dot) org 
+
+Version of K����: 2 Version of the document: **2.2** September 15, 2016 
+
+1STMicroelectronics 2Radboud University Nĳmegen 
+
+## **Contents** 
+
+|**1**<br>**Def**|**nition of the Motorist authenticated encryption mode**|**3**|
+|---|---|---|
+|1.1|Motivation for the introduction of the Motorist mode . . . . . . .|. . . . .<br>5|
+|1.2|The layered structure . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>7|
+|1.3|Conventions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>7|
+|1.4|The Piston . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>8|
+|1.5|The Engine . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>11|
+|1.6|The Motorist . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>12|
+|1.7|Illustrations<br>. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>16|
+|**2**<br>**Def**|**nition of K����**|**20**|
+|2.1|The K�����-_p_permutations . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>20|
+|2.2|The key pack . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>21|
+|2.3|<br>Generic defnition of K����<br>. . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>21|
+|2.4|Named instances of K����. . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>21|
+|2.5|Security goals . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>22|
+|2.6|Implementations<br>. . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>23|
+|**3**<br>**Sec**|**urity rationale**|**24**|
+|3.1|The full-state keyed duplex construction . . . . . . . . . . . . . . .|. . . . .<br>24|
+|3.2|Generic security of FSKD . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>25|
+|3.3|<br>Decodability of Motorist . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>27|
+|3.4|Security of Motorist . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>27|
+|3.5|Security of K����. . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>28|
+|3.6|K����variants with 256-bit security strength . . . . . . . . . . . .|. . . . .<br>29|
+|**4**<br>**Usi**|**ng K����in the context of CAESAR**|**29**|
+|4.1|Specifcation and security goals . . . . . . . . . . . . . . . . . . . .|. . . . .<br>29|
+|4.2|Security analysis and design rationale . . . . . . . . . . . . . . . .|. . . . .<br>30|
+|4.3|Features<br>. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>30|
+|4.4|Intellectual property<br>. . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>30|
+|4.5|Consent . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>30|
+|46|CAESAR use cases<br>|31|
+|.|<br>. . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>|
+|**A Cha**|**nge log**|**33**|
+|A.1|From 1.0 to 1.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>33|
+|A.2|From 1.1 to 1.2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>34|
+|A.3|From 1.2 to 2.0 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>34|
+|A.4|From 2.0 to 2.1 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>34|
+|A.5|From 2.1 to 2.2 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .|. . . . .<br>34|
+
+2 
+
+This document specifies K����v2, a parameterized permutation-based authenticated encryption scheme with support for associated data and sessions. Its underlying permutation is K�����- _p_ and it is based on the Motorist mode for authenticated encryption. For K����v2, we formulate a generic definition and have 5 named instances. In the remainder of this document we denote K����v2 simply as K����. The named K����instances are aimed at a wide spectrum of platforms, both dedicated hardware and so�ware ranging from 32-bit embedded processors to modern PC processors with SIMD units and multiple cores. 
+
+The remainder of this document is structured as follows. In Section 1 we specify Motorist and provide a motivation for introducing it. In Section 2 we specify K����, its components, named instances and security claim. In Section 3 we treat the provable generic security of Motorist, its implications for K����and discuss the state-of-the-art of cryptanalysis of K����. We explain how K����addresses the CAESAR call for proposals in Section 4. Finally, Appendix A contains a change log. 
+
+## **1 Definition of the Motorist authenticated encryption mode** 
+
+The mode Motorist supports the authenticated encryption of sequences of messages in _sessions_ . During a session, it processes messages and cryptograms. A message consists of a plaintext and possible associated data (called _metadata_ in the remainder of this document). For each message, it _wraps_ it by enciphering the plaintext into a ciphertext and computing a tag over the full sequence of messages. A cryptogram consists of a ciphertext, possible metadata and a tag. For each cryptogram, it _unwraps_ it by deciphering the ciphertext into a plaintext, verifying the tag, and returning the plaintext if the tag is valid. A message can also consist of metadata alone and the corresponding cryptogram does not have any ciphertext. Within a session, the tag of a cryptogram authenticates the full sequence of messages sent/received since the start of the session. The start of a session requires a secret key and possibly a nonce, if the secret key is not unique for this session. 
+
+The mode Motorist is sponge-based and supports one or more duplex instances operating in parallel. It makes duplexing calls with input containing key, nonce, plaintext and metadata bits and uses its output as tag or as key stream bits. 
+
+The duplex instances in Motorist differ from the original duplex construction [3] in that they accept input blocks as large as the width of the permutation (a�er padding), instead of only the outer part. This variant, initialized with a secret key and denoted _fullstate keyed duplex_ (FSKD), was introduced by Mennink, Reyhanitabar and Vizár [14]. They proved a strong result on the generic security of the FSKD. More precisely they give an upper bound on the advantage of distinguishing a FSKD calling a random permutation from a random oracle, that is quite close to that of the original keyed duplex construction [1]. This means that increasing the input block length from the rate ( _r_ bits) to the width of the permutation ( _b_ bits) has no noticeable impact on the generic security, while allowing the injection of more bits per call to the underlying permutation, thus improving performance. 
+
+The mode Motorist supports a parameterized degree of parallelism. This allows exploiting resources such as single-instruction multiple-data (SIMD) instructions in modern CPUs or pipelining in dedicated hardware. The Motorist distributes the message (plaintext and metadata) over the different duplex instances, where each input bit is absorbed in a single duplex instance. To produce a tag that depends on the full message and not only on the message bits that have been injected in a single duplex instance, Motorist performs some dedicated processing at the end of each message called a _knot_ . It extracts 
+
+3 
+
+<!-- Start of picture text -->
+0<br>SUV<br>1<br>T (0)<br>0 P (1)<br>SUV A (1)<br>1<br>T (0) C (1) T (1)<br>0 P (1) P (2)<br>SUV A (1)<br>1<br>T (0) C (1) T (1) C (2) T (2)<br>0 P (1) P (2)<br>SUV A (1) A (3)<br>1<br>T (0) C (1) T (1) C (2) T (2) T (3)<br><!-- End of picture text -->
+
+**Figure 1** – _A session in Motorist. First, the session is started with a given secret and unique value (_ SUV _). Optionally, a tag T_<sup>(0)</sup> _on_ SUV _can be produced or verified. Then, Motorist processes both the plaintext P_<sup>(1)</sup> _and metadata A_<sup>(1)</sup> _in parallel. The plaintext P_<sup>(1)</sup> _is encrypted into ciphertext C_<sup>(1)</sup> _and T_<sup>(1)</sup> _authenticates_ (SUV, _P_<sup>(1)</sup> , _A_<sup>(1)</sup> ) _. A�er processing the second message, T_<sup>(2)</sup> _authenticates_ (SUV, _P_<sup>(1)</sup> , _A_<sup>(1)</sup> , _P_<sup>(2)</sup> , _A_<sup>(2)</sup> ) _, and a�er the third message, T_<sup>(3)</sup> _authenticates the full session_ (SUV, _P_<sup>(1)</sup> , _A_<sup>(1)</sup> , _P_<sup>(2)</sup> , _A_<sup>(2)</sup> , _P_<sup>(3)</sup> , _A_<sup>(3)</sup> ) _, where P_<sup>(3)</sup> _is the empty string._ 
+
+4 
+
+chaining values from each duplex instance, concatenates them, and injects them into all duplex instances. This makes the state of all duplex instances depend on the full sequence of messages. Then it extracts a tag from a single duplex object. 
+
+To start a session, Motorist takes as input a string that must be secret and (globally) unique. We call this string the _secret and unique value_ (SUV). If the SUV consists of a key and a nonce, we recommend the key comes first. Motorist injects the SUV into each duplex instance, appending a diversification string at the end to make their states different. Figure 1 illustrates a session in Motorist. 
+
+A single Motorist session can be used to secure two-way communication between two parties. In that case, one must clearly indicate for each message who is its sender. This can be done by including its identifier in the metadata of the message. Alternatively, one can rely on a strict convention, such as messages alternating in the two directions. In the case of a session that is dedicated to unwrapping only, the Motorist session being started does not have to impose the nonce requirement to the SUV. 
+
+### **1.2 The layered structure** 
+
+We specify Motorist in three layers, each handling a different aspect. The input and output strings processed in these layers are described in terms of _byte streams_ , i.e., a string of bytes that can be read from and/or wri�en to sequentially. Using streams instead of traditional strings brings the specification closer to the implementation, where, e.g., the input data is processed as it arrives and its length is not necessarily known in advance. We call a sequence of consecutive bytes from a stream a _fragment_ . 
+
+The layers are, from bo�om to top: 
+
+- **Piston** This layer keeps a _b_ -bit state and applies the permutation _f_ to it. It performs the basic functions such as injecting data, possible simultaneous encryption or decryption, extracting tags and se�ing the fragment offsets. It has a _squeezing rate_ , the classical sponge rate, and an _absorbing rate_ , the state width minus the last part containing the fragment offsets. When being called to inject, it receives a reference to a byte stream and it puts a fragment that is as long as the input block can hold or that exhausts the input byte stream, and sets the corresponding fragment offsets to the correct value. When being called to encrypt or decrypt, it puts a plaintext fragment that covers the remaining outer part of the input block or that exhausts the input byte stream, and sets the corresponding fragment offset. 
+
+- **Engine** This layer controls Π _≥_ 1 Piston objects that operate in parallel. It serves as a dispatcher keeping its Piston objects busy, imposing that they are all treating the same kind of request. It can also inject the same stream into all Piston objects collectively. The Engine also ensures that the SUV and message sequence can be reconstructed from the sponge input to each Piston object and that each output bit of its Piston objects is used at most once. 
+
+- **Motorist** This layer implements the user interface. It supports the starting of a session and subsequent wrapping of messages and unwrapping of cryptograms by driving the Engine. 
+
+### **1.3 Conventions** 
+
+Before we describe the three layers in details, we define the conventions we use. 
+
+A bit is an element of **Z** 2. A _n_ -bit string is a sequence of bits represented as an element of **Z**<sup>_n_By convention the first bit in the sequence is wri�en on the le�side, i.e., the first</sup> 2<sup>.</sup> element in the string ( _b_ 0, _b_ 1, . . . , _bn−_ 1) is _b_ 0. The set of bit strings of all lengths is denoted **Z** 2<sup>_∗_and is defined as</sup> 
+
+The length in bits of a string _s_ is denoted _|s|_ . The concatenation of two strings _a_ and _b_ is denoted _a||b_ . In some cases, where it is clear from the context, the concatenation is simply denoted _ab_ . 
+
+A byte is a string of 8 bits, i.e., an element of **Z**<sup>8</sup> 2<sup>.</sup> The byte ( _b_ 0, _b_ 1, . . . , _b_ 7) can also be represented by the integer value ∑ _i_ 2<sup>_i_</sup> _bi_ wri�en in hexadecimal. E.g., the byte (0, 1, 1, 0, 0, 1, 0, 1) can be equivalently wri�en as 0xA6. When the length of a bit string is a multiple of 8, it can also be represented as a sequence of bytes, and vice-versa. E.g., the bit string (0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1) can also be wri�en as the sequence (0, 1, 1, 0, 0, 1, 0, 1) (0, 0, 1, 1, 1, 1, 1, 1) or 0xA6 0xFC. 
+
+The function enc8( _x_ ) encodes the integer _x_ , with 0 _≤ x ≤_ 255, as a byte with value _x_ . 
+
+7 
+
+In our specification we make use of _byte streams_ . In actual implementations, they can take the form of pointers to some buffer, bytes arriving from, or sent to, some communication channel, and so on. What is important is that a realization supports the set of functions defined here. We indicate byte streams by capital le�ers such as _X_ and denote operations using the convention _X_ .D�S��������(), popular in object oriented programming. Concretely, a byte stream is a string of bytes that supports the following functions, similarly to a queue: 
+
+- _z ← X_ .P���B���() removes the first byte of stream _X_ and assigns it to _z_ ; 
+
+- _X_ .P���B���( _z_ ) appends byte _z_ to the end of the stream _X_ ; 
+
+- _X_ . H��M���returns a Boolean value that indicates whether stream is empty (F����) 
+
+- or not (T���); 
+
+- ( _X_ = _Y_ ) returns a Boolean value that is T���iff streams _X_ and _Y_ have the same content; 
+
+- _X_ .C����(): removes all bytes from stream _X_ . 
+
+At some places we speak of input byte streams and output byte streams. An input byte stream does not have to support P���B���( _z_ ) and an output byte stream does not have to support P���B���(). 
+
+In the specification of Motorist we define a number of types (classes) of objects, each having a specific set of a�ributes and supporting a specific set of functions. When instantiating an object, the value of a number of parameters are determined and the a�ributes are initialized. Once an object is instantiated, it can be used by calling its functions. In between calls, the a�ributes of the object keep their values. We denote objects by a name, such as Piston and their functions (a�ributes) by the name followed by a dot and the name of the function (a�ribute), possibly with some arguments, such as Piston.I�����( _X_ ). When a byte stream figures as the parameter in a function call, it should be seen as a _reference_ to the byte stream being passed. The object supporting the called function can use this reference to perform operations on the byte stream. 
+
+### **1.4 The Piston** 
+
+Piston is specified in Algorithm 1. It uses a permutation _f_ operating on _b_ -bit state denoted as _s_ . During instantiation, the Piston state is initialized to all-zero. In the algorithm, we use _s_ [ _i_ ] to denote byte _i_ of the state _s_ , where indexing starts from 0. The other parameters of Piston are the squeezing byte rate _Rs_ and the absorbing byte rate _Ra_ with _Rs ≤ Ra_ . 
+
+At Piston-level there is no distinction between metadata, SUV and chaining values and we will use the term metadata to cover all three. When properly used (i.e., through an Engine), the Piston builds a full-width input block from plaintext, metadata and encoding of fragments offsets, forma�ed as follows: 
+
+- possibly a number of zero bytes, starting at index 0; 
+
+- possibly a plaintext fragment, starting a�er the zero bytes, and finishing at most at index _Rs_ ; 
+
+- possibly a metadata fragment, starting at index 0 (if no plaintext fragment) or at index _Rs_ (otherwise), and finishing at most at index _Ra_ ; 
+
+- the fragment offsets. 
+
+8 
+
+**Algorithm 1** Definition of P�����[ _<u>f</u>_ , _Rs_ , _Ra_ <u>]</u> 
+
+**Require:** _Rs_ is the squeezing rate in bytes **Require:** _Ra_ is the absorbing rate in bytes, with _Rs ≤ Ra ≤_<sup>_<u>b−</u>_</sup> 8<sup><u>32</u></sup> _<_ 248 **Convention:** _I_ , _X_ input and _O_ , _T_ output byte streams 
+
+**Instantiation:** Piston _←_ P�����[ _f_ , _Rs_ , _Ra_ ] State: _s ←_ 0<sup>_b_</sup> Offsets: (EOM, Crypt End, Inject Start, Inject End) _←_ ( _Ra_ , _Ra_ + 1, _Ra_ + 2, _Ra_ + 3) Crypt and Inject offsets: ( _ωC_ , _ωI_ ) _←_ (0, 0) 
+
+**Interface:** Piston.C����( _I_ , _O_ , �������F���) **while** ( _I_ .H��M��� = T���) AND ( _ωC < Rs_ ) **do** _x ← I_ .P���B���() _O_ .P���B���( _s_ [ _ωC_ ] _⊕ x_ ) **if** �������F��� = T��� **then** _s_ [ _ωC_ ] _← x_ **else** _s_ [ _ωC_ ] _← s_ [ _ωC_ ] _⊕ x ωC ← ωC_ + 1 _s_ [Crypt End] _← s_ [Crypt End] _⊕_ enc8( _ωC_ ) ( _ωC_ , _ωI_ ) _←_ (0, _Rs_ ) **Interface:** Piston.I�����( _X_ ) _s_ [Inject Start] _← s_ [Inject Start] _⊕_ enc8( _ωI_ ) **while** ( _X_ .H��M��� = T���) AND ( _ωI < Ra_ ) **do** _s_ [ _ωI_ ] _← s_ [ _ωI_ ] _⊕ X_ .P���B���() _ωI ← ωI_ + 1 _s_ [Inject End] _← s_ [Inject End] _⊕_ enc8( _ωI_ ) ( _ωC_ , _ωI_ ) _←_ (0, 0) **Interface:** Piston.S����() _s ← f_ ( _s_ ) **Interface:** Piston.G��T��( _T_ , _ℓ_ ) with _ℓ ≤ Rs_ **if** _ℓ_ = 0 **then** _s_ [EOM] _← s_ [EOM] _⊕_ enc8(255) **else** _s_ [EOM] _← s_ [EOM] _⊕_ enc8( _ℓ_ ) Piston.S����() **for** _i ←_ 0 to _ℓ −_ 1 **do** _T_ .P���B���( _s_ [ _i_ ]) _ωC ← ℓ_ 
+
+9 
+
+Piston remembers in the offset a�ribute _ωC_ how many output bytes were used as tag or chaining value to avoid reusing the same bits as key stream during plaintext encryption or decryption. It also remembers whether the current block contains a plaintext fragment and stores in offset a�ribute _ωI_ the position where metadata bits must be absorbed. A�er the application of _f_ , the bytes of the outer part of the state are used as follows: 
+
+- possibly a number of bytes used as tag, starting at index 0; 
+
+- possibly a number of bytes used as key stream, starting a�er the possible tag. 
+
+There are four fragment offsets: 
+
+- **EOM** This fragment offset has a double function. First, it codes the number of bytes in the next output block that are used as tag, and that will consequently not be used as key stream. Second, it delimits messages by having a non-zero value if it is part of an input block that is the last of a message or of a string that is injected collectively. In case no tag is requested at the end of message or string that is injected collectively, EOM takes the value 255. The values 248 and above have a special meaning and are reserved for future use. 
+
+- **Crypt End** This codes the end of the plaintext fragment in the current input block. (The start of the plaintext fragment is coded by EOM in the previous input block, where the value 255 means that the plaintext fragment starts at index 0.) 
+
+- **Inject Start** This codes the start of the metadata fragment in the current input block. If there is also a plaintext fragment in the current input block, then the metadata fragment starts at Inject Start = _Rs_ . Otherwise, the metadata fragment starts at Inject Start = 0. 
+
+**Inject End** This codes the end of the metadata fragment in the current input block. 
+
+In the algorithm, the a�ributes EOM, Crypt End, Inject Start and Inject End are the indexes where the fragment offsets are coded. 
+
+The function Piston.C����( _I_ , _O_ , �������F���) supports the combined encryption of plaintext (or decryption of ciphertext) and absorbing of the corresponding plaintext into the outer part of the state. The Boolean �������F���indicates whether it is encryption (F����) or decryption (T���). Here _I_ denotes the input byte stream containing the plaintext to be encrypted or ciphertext to be decrypted and _O_ the output byte stream where the result will be wri�en to. The plaintext absorbtion starts at index given by Piston offset _ωC_ and will end at index _Rs_ or earlier if the input stream is exhausted. It codes the end of the plaintext fragment in the offset Crypt End, resets the plaintext absorbtion index _ωC_ and sets offset _ωI_ to indicate the presence of a plaintext fragment. 
+
+The function Piston.I�����( _X_ ) injects metadata taken from the input stream _X_ . Piston starts injecting from index _ωI_ . The metadata fragment will end at index _Ra_ or earlier if the input stream is exhausted. It codes the start of the metadata fragment in the offset Inject Start and its end in Inject End, and finally resets both offsets ( _ωC_ , _ωI_ ). 
+
+The function Piston.S����() simply applies the underlying permutation _f_ to the state. It is called by the parent Engine when there are still plaintext or metadata bytes waiting to be absorbed in the current session. 
+
+Finally, the function Piston.G��T��( _T_ , _ℓ_ ) also applies the underlying permutation _f_ to the state, but in addition writes the first _ℓ_ bytes of the state to output byte stream _T_ , to be used as a tag or chaining value. Before it does that, it codes in the data element EOM the 
+
+10 
+
+number _ℓ_ of bytes of the state a�er the application of _f_ that are reserved as tag, or 255 if no tag was requested. In both case, this non-zero value indicates that the last input block of a message was absorbed. 
+
+The description of Piston assumes that the plaintext and metadata input streams do not refill between inject and crypt calls. More exactly, if the function _X_ .H��M���returns F����for an input stream _X_ , it must keep doing so for that stream until next call to Piston.G��T��(). This also means that if an input block contains a plaintext fragment, this must be announced before injecting metadata. 
+
+As long as this constraint is respected, one could implement Piston differently such that it allows more freedom in the order that the plaintext and metadata are absorbed. These may be offered in short chunks and even in an alternating fashion. 
+
+### **1.5 The Engine** 
+
+Engine is specified in Algorithm 2. It controls and relies on an array of Π Piston objects that operate in parallel. Engine does not maintain any state in itself. It relies on each Piston for maintaining the bit state and offsets, and on Motorist for the consistency of operation sequence. 
+
+**Algorithm 2** Definition of E�����[Pistons] 
+
+**Require:** Pistons is an array of Π pistons, with 1 _≤_ Π _≤_ 255 **Convention:** _I_ , _A_ , _X_ input and _O_ , _T_ output byte streams 
+
+**Instantiation:** Engine _←_ E�����[Pistons] 
+
+**Interface:** Engine.W���( _I_ , _O_ , _A_ , �������F���) **if** ( _I_ .H��M��� = T���) **then for** _i ←_ 0 to Π _−_ 1 **do** Pistons[ _i_ ].C����( _I_ , _O_ , �������F���) **for** _i ←_ 0 to Π _−_ 1 **do** Pistons[ _i_ ].I�����( _A_ ) **if** ( _I_ .H��M��� = T���) OR ( _A_ .H��M��� = T���) **then for** _i ←_ 0 to Π _−_ 1 **do** Pistons[ _i_ ].S����() 
+
+**Interface:** Engine.G��T���( _T_ , _ℓ_ ) with _ℓ ∈_ **N**<sup>Π</sup> **for** _i ←_ 0 to Π _−_ 1 **do** Pistons[ _i_ ].G��T��( _T_ , _ℓ_ [ _i_ ]) 
+
+**Interface:** Engine.I�����C���������( _X_ , ���������F���) Let _Y_ be an array of Π local byte streams, initially empty **while** _X_ .H��M��� = T��� **do** _x ← X_ .P���B���() **for** _i ←_ 0 to Π _−_ 1 **do** _Y_ [ _i_ ].P���B���( _x_ ) **if** ���������F��� = T��� **then for** _i ←_ 0 to Π _−_ 1 **do** _Y_ [ _i_ ].P���B���(enc8(Π)) **for** _i ←_ 0 to Π _−_ 1 **do** _Y_ [ _i_ ].P���B���(enc8( _i_ )) **while** _Y_ [0].H��M��� = T��� **do for** _i ←_ 0 to Π _−_ 1 **do** Pistons[ _i_ ].I�����( _Y_ [ _i_ ]) **if** _Y_ [0].H��M��� = T��� **then for** _i ←_ 0 to Π _−_ 1 **do** Pistons[ _i_ ].S����() 
+
+Engine has three interfaces. In each of them the processing terminates by the applica- 
+
+11 
+
+tion of _f_ on the Π states, either via call Piston.S����() or to Piston.G��T��(). An actual implementation can either perform these calls sequentially or in parallel. This is also possible for the calls to Piston.C����() and Piston.I�����() interfaces. If the input stream _I_ is not exhausted, the function Engine.W���( _I_ , _O_ , _A_ , �������F���) starts by dispatching the input to the Π Piston objects and collecting the corresponding Π output in _O_ . Each Piston object takes a fragment from _I_ , so all objects process in total up to Π _Rs_ bytes. The �������F���is as for Piston.C����(). Next, Engine dispatches the metadata _A_ to the Piston objects. Each Piston object takes a fragment from _A_ , so all objects process in total up to Π( _Ra − Rs_ ) bytes (if Piston.C����() was called before) or Π _Ra_ bytes (otherwise). Note that Piston.I�����() is called even if _A_ is exhausted such that to set appropriately the offsets in the Π Piston states. Finally, Engine calls Piston.S����() for each Piston, unless both the input and the metadata streams are exhausted. In that case it delays the application of _f_ until the call to Engine.G��T���(). 
+
+The function Engine.G��T���( _T_ , _ℓ_ ) calls Piston.S����() on all Π Piston objects and collects the corresponding tags into the output stream _T_ . The last parameter, _ℓ_ , is in fact a vector, allowing one to take a different number of bits in each Piston. The function Engine.I�����C���������( _X_ , ���������F���) aims at injecting the same metadata _X_ to all Π Piston objects. It is used to inject the SUV and the chaining values. When ���������F��� = T���, as set when injecting the SUV, it appends to _X_ two bytes: 
+
+1. one byte encoding the degree of parallelism Π, for domain separation between instances with a different number of Piston objects, and 
+
+2. one byte encoding the index of the Piston object, for domain separation between Piston objects and in particular to avoid identical key streams. 
+
+**1.6 The Motorist** Motorist is specified in Algorithm 3. It uses an Engine object, calling a parameterized number Π of Piston objects. A Motorist object is also parameterized by the _alignment unit W_ in bits, typically 32 or 64. This ensures that the fragment start offsets and the length of tags, chaining values and fragments (except when a stream is exhausted) are a multiple of _W_ , allowing data to be manipulated in multi-byte chunks. The remaining parameters determine the security level: the _capacity c_ and the _tag length τ_ . From these, the Motorist object derives the following quantities: 
+
+- the squeezing byte rate _Rs_ , the largest multiple of _W_ such that at least max( _c_ , 32) bits (for the inner part and for the fragment offsets) of the state are never used as output; 
+
+- the absorbing byte rate _Ra_ , the largest multiple of _W_ that reserves at least 32 bits at the end of the state for absorbing the fragment offsets; 
+
+- the chaining value length _c_<sup>_′_</sup> , the smallest multiple of _W_ greater than or equal to the capacity _c_ . 
+
+Motorist maintains its own state machine via the a�ribute �����. The possible phases are: 
+
+**_ready_** The Motorist object is initialized and no input has been given yet. 
+
+**_riding_** The Motorist object processed the SUV and is able to (un)wrap. The object stays in this phase until an error occurs. 
+
+12 
+
+**_failed_** The Motorist object received an incorrect tag. 
+
+In order for a tag to depend on the state of the Π _>_ 1 Piston objects, or when Π = 1 and forge�ing is requested, the Motorist object performs an operation that we call a _knot_ . This is the purpose of the Motorist.M���K���() function. This function first retrieves a _c_<sup>_′_</sup> -bit chaining values from each Piston object, concatenates these to make a Π _× c_<sup>_′_</sup> -bit string and collectively injects it into all Piston objects. For Π _>_ 1, this makes the state of all Piston objects depend on each other. A fortiori this is also the case for Pistons[0], from which the tag of a message is extracted. 
+
+For the chaining values we have a length of at least _c_ bits so that the probability of collisions in the chaining values is not larger than that of collisions in the inner part of the state (see Section 3.2). In addition, the chaining value of Pistons[0] is injected exactly where it was extracted, resulting into se�ing _c_<sup>_′_</sup> bits of the outer part to zero. This chaining value is also injected in the remaining Π _−_ 1 states. To compute backwards in any of the Piston objects, an adversary would then have to guess _c_<sup>_′_</sup> _≥ c_ bits, hence protecting the Π state(s) before the knot, if some leakage occurs a�er the knot. The knot is illustrated in Figure 2. 
+
+<!-- Start of picture text -->
+T<br><!-- End of picture text -->
+
+**Figure 2** – _A knot. In this case,_ Π = 4 _. Each line represents the state of a piston, from_ Pistons[0] _at the bo�om to_ Pistons[3] _at the top. Chaining values taken from all the pistons are injected collectively into the four pistons. The arrows show how the chaining values are injected in_ Pistons[0] _, and the same values are injected symmetrically in the other pistons, but to avoid overloading the figure we did not draw the corresponding arrows. The c_<sup>_′_</sup> _first bits of_ Pistons[0] _’s state are injected back, thereby se�ing them to zero, as symbolized by the red cross. If a tag is taken, it is taken from_ Pistons[0] _, whose state now depends on all pistons._ 
+
+The function Motorist.S����E�����( _SUV_ , ���F���, _T_ , �������F���, ������F���) begins a session with the given SUV read from the _SUV_ byte stream. It collectively injects it, with ���������F��� = T���for domain separation as explained above. The parameter ������F���tells whether a knot is necessary. The starting of a session supports the generation or verification of a tag by se�ing the parameter ���F���to T���. If 
+
+13 
+
+�������F��� = F����, it returns a tag in the byte stream _T_ and otherwise it verifies the tag read from _T_ . Unless the tag verification fails, it switches the phase to _riding_ . 
+
+The function Motorist.W���( _I_ , _O_ , _A_ , _T_ , �������F���, ������F���) wraps a message or unwraps a cryptogram. 
+
+- To wrap, the function must be called with �������F��� = F����, _I_ (resp. _A_ ) an input byte stream containing the plaintext (resp. the metadata), _O_ (resp. _T_ ) an output byte stream ready to get the ciphertext (resp. the tag) and ������F���. 
+
+- To unwrap, the function must be called with �������F��� = T���, _I_ (resp. _A_ , _T_ ) an input byte stream containing the ciphertext (resp. the metadata, the tag) and _O_ an output byte stream ready to get the plaintext and ������F���. The function returns T���if the tag is correct and F����otherwise. In addition, it clears the byte stream _O_ if the tag is incorrect. 
+
+The function starts by calling repeatedly Engine.W���() until both the input and the metadata streams are exhausted. Then, if ������F��� = T���or Π _>_ 1, the function calls Motorist.M���K���(). Finally, it generates or verifies the tag. 
+
+Once a session is started with Motorist.S����E�����(), the Motorist object can receive as many calls to Motorist.W���() as desired. The nonce requirement (i.e., that the SUV is unique) plays at the level of the session. Within a session, messages have no explicit message number or nonce. However, the communicating parties must process them in the same order for the tags to verify. An alternative way to see this concept of session is that it supports intermediate tags. This allows the two parties to communicate in both directions in a single session by se�ing appropriately �������F���in the calls to Motorist.W���(). Note that, as the state of the Piston objects depends on whether a tag is requested or not (when calling Motorist.S����E�����()) and whether a knot is performed or not, the communicating parties must use synchronized values for the ���F���and ������F��� parameters. 
+
+14 
+
+**Algorithm 3** Definition of M�������[ _<u>f</u>_ , Π, _W_ , _c_ , _τ_ <u>].</u> 
+
+**Require:** Π is the number of pistons, with 1 _≤_ Π _≤_ 255 **Require:** _W_ is the alignment unit in bits, with _W_ a strictly positive multiple of 8 _<u>c</u> b−_ max( _c_ <u>,32)</u> **Require:** _c_ is the required capacity in bits, with ⌈ _W_ ⌉ _≤_ ⌊ _W_ ⌋ **Require:** _τ_ is the tag length in bits, a multiple of _W_ and _τ ≤ W_ ⌈ _Wc_ ⌉ **Instantiation:** Motorist _←_ M�������[ _f_ , Π, _W_ , _c_ , _τ_ ] _b−_ max( _c_ <u>,32)</u> Squeezing byte rate: _Rs ←_<sup>_<u>W</u>_</sup> 8 ⌊ _W_ ⌋ Absorbing byte rate: _Ra ←_<sup>_<u>W</u>_</sup> 8 ⌊ _<u>b−W</u>_ <u>32</u> ⌋ Chaining value length: _c_<sup>_′_</sup> _← W_ ⌈ _Wc_ ⌉ Engine: Engine _←_ E�����[P�����[ _f_ , _Rs_ , _Ra_ ]<sup>Π</sup> ] Phase: ����� _← ready_ 
+
+**Interface:** ��� _←_ Motorist.S����E�����( _SUV_ , ���F���, _T_ , �������F���, ������F���) **if** ����� = _ready_ **then return** error Engine.I�����C���������( _SUV_ , T���) **if** ������F��� = T��� **then** Motorist.M���K���() ����� _← riding_ **return** Motorist.H�����T��(���F���, _T_ , �������F���) 
+
+**Interface:** ��� _←_ Motorist.W���( _I_ , _O_ , _A_ , _T_ , �������F���, ������F���) **if** ����� = _riding_ **then return** error **repeat** Engine.W���( _I_ , _O_ , _A_ , �������F���) **until** ( _I_ .H��M��� = F����) AND ( _A_ .H��M��� = F����) **if** (Π _>_ 1) OR (������F��� = T���) **then** Motorist.M���K���() ��� = Motorist.H�����T��(T���, _T_ , �������F���) **if** ��� = F���� **then** _O_ .C����() **return** ��� **Internal interface:** Motorist.M���K���() Let _T_<sup>_′_</sup> be a local byte stream, initially empty Engine.G��T���( _T_<sup>_′_</sup> , [ _c_<sup>_′_</sup> /8]<sup>Π</sup> ) Engine.I�����C���������( _T_<sup>_′_</sup> , F����) **Internal interface:** ��� _←_ Motorist.H�����T��(���F���, _T_ , �������F���) Let _T_<sup>_′_</sup> be a local byte stream, initially empty **if** ���F��� = F���� **then** Engine.G��T���( _T_<sup>_′_</sup> , 0<sup>Π</sup> ) **else** Engine.G��T���( _T_<sup>_′_</sup> , [ _τ_ /8, 0<sup>Π</sup><sup>_−_1</sup> ]) **if** �������F��� = F���� **then** Copy _T_<sup>_′_</sup> into _T_ **else if** _T_<sup>_′_</sup> = _T_ **then** ����� _← failed_ **return** F���� **return** T��� 
+
+15 
+
+### **1.7 Illustrations** 
+
+In this subsection, we illustrate the Motorist mode by showing the input block constructed by the mode and its underlying layers Engine and Piston. By “input block”, we mean the sequence of bytes that are absorbed into the state between calls to the permutation _f_ . Note that the input blocks are the same for wrapping and unwrapping. We do not depict output blocks as they can be easily deduced: 
+
+- a tag is output by extracting the first _τ_ /8 bytes (16 bytes in the examples here) of the state a�er the last block is processed; 
+
+- key stream bytes used to encrypt (or decrypt) a given plaintext fragment are taken before the plaintext fragment is XORed, at the corresponding location in the state. 
+
+#### **1.7.1 Conventions** 
+
+The conventions we use in this subsection are illustrated in Figures 3 and 4. Figure 3 shows how we draw input blocks in the case of Π = 1. Two types of input blocks are illustrated: one containing both plaintext and metadata fragments, and another containing only a metadata fragment. The figure also gives the location of the fragment offsets. Figure 4 displays the convention used when Π _>_ 1, where input blocks that can be simultaneously processed are “glued” together. 
+
+|(plaintext fragment)|(metadata fr.)|EOM|CE|IS= _Rs_|IE|
+|---|---|---|---|---|---|
+|(metadata fragment)||EOM|CE|IS=0|IE|
+
+**Figure 3** – _Convention for displaying input blocks. Each input block is enclosed in a rectangle. Distinct blocks are separated by a small space. Within a block, we distinguish between the location containting the plaintext fragment (possibly empty), the one for the metadata fragment and the four fragment offsets. The fragment offsets Crypt End, Inject Start and Inject End are abbreviated into CE, IS and IE, respectively. Note that Inject Start can take only two values,_ 0 _or Rs, depending on the presence or absence of a plaintext fragment._ 
+
+|(piston #0’s metadata fragment)|EOM|CE|IS|IE|
+|---|---|---|---|---|
+|(piston #1’s metadata fragment)|EOM|CE|IS|IE|
+|(piston #2’s metadata fragment)|EOM|CE|IS|IE|
+|(piston #3’s metadata fragment)|EOM|CE|IS|IE|
+
+**Figure 4** – _Convention for displaying input blocks when_ Π _>_ 1 _. The convention is illustrated for_ Π = 4 _as an example. The_ Π _blocks that are processed together by the Engine have no space in between._ 
+
+#### **1.7.2 Detailing Figure 1** 
+
+We now illustrate what happens for the session depicted in Figure 1 with one call to Motorist.S����E�����() and then wrapping three messages ( _A_<sup>(1)</sup> , _P_<sup>(1)</sup> ), ( _A_<sup>(2)</sup> , _P_<sup>(2)</sup> ) and ( _A_<sup>(3)</sup> , _P_<sup>(3)</sup> ), with _P_<sup>(3)</sup> the empty string. 
+
+16 
+
+First, the Motorist object processes the secret and unique value SUV and produces a tag _T_<sup>(0)</sup> . Figure 5 illustrates this for Π = 1 and assuming that SUV fits in one block, while Figure 6 illustrates the case Π = 4. 
+
+|SUV1 0<br>0<sup>_∗_</sup><br>16<br>0<br>0<br>_≤Ra_|
+|---|
+
+**Figure 5** – _Example of input block corresponding to the absorbing of_ SUV _fi�ing in one block. The two bytes with value_ 1 _and_ 0 _that follow_ SUV _encode_ Π = 1 _and i_ = 0 _. Then a number of_ 0 _bytes fill the rest of the metadata fragment. EOM_ = 16 _as_ 16 _bytes of tag are requested. There is no plaintext fragment, hence Crypt End_ = _Inject Start_ = 0 _. The value of Inject End is the length of_ SUV _plus_ 2 _._ 
+
+|SUV4 0|0<sup>_∗_</sup>|16|0|0|_≤Ra_|
+|---|---|---|---|---|---|
+|SUV4 1|0<sup>_∗_</sup>|255|0|0|_≤Ra_|
+|SUV4 2|0<sup>_∗_</sup>|255|0|0|_≤Ra_|
+|SUV4 3|0<sup>_∗_</sup>|255|0|0|_≤Ra_|
+
+**Figure 6** – _Same as Figure 5 but with_ Π = 4 _. Notice that the_ 16 _-byte tag is taken only from the first piston (EOM_ = 16 _) and not from the others (EOM_ = 255 _)._ 
+
+Then, the Motorist object receives the first message ( _A_<sup>(1)</sup> , _P_<sup>(1)</sup> ), where we assume that _R|Aa−_<sup>(1</sup> _R_<sup>)</sup> _<u>|s</u>_<sup>_>_</sup><sup>_<u>|P</u>_</sup> _R_<sup>(1</sup> _s_<sup>)</sup><sup>_<u>|</u>_, so that the plaintext is exhausted before the metadata is, as suggested on</sup> Figure 1. Figure 7 illustrates this case for Π = 1. 
+
+Note that if no tag was requested upon calling Motorist.S����E�����(), we would see EOM = 255 on all pistons in Figures 5 and 6, and the first plaintext fragment would be _P_ 0 with _|P_ 0 _|_ = _Rs_ (instead of 0<sup>16</sup> _||P_ 0). See also Figure 10. 
+
+|0<sup>16</sup> _P_0|_A_0||0|_Rs_|_Rs_|_Ra_|
+|---|---|---|---|---|---|---|
+|_P_1|_A_1||0|_Rs_|_Rs_|_Ra_|
+|_P_♢<br>0<sup>_∗_</sup>|_Ax_|…|0|_≤Rs_|_Rs_|_Ra_|
+|_Ax_+1|||0|0|0|_Ra_|
+|_A_△<br>0<sup>_∗_</sup>||…|16|0|0|_≤Ra_|
+
+**Figure 7** – _Input blocks for processing_ ( _A_<sup>(1)</sup> , _P_<sup>(1)</sup> ) _. We assume that A_<sup>(1)</sup> = _A_ 0 _||_ . . . _||Ax ||Ax_ +1 _||_ . . . _||A_ △ _, with |Ai|_ = _Ra − Rs for i ≤ x, |Ai|_ = _Ra for x < i_ =△ _and |A_ △ _| ≤ Ra. Similarly, we assume that P_<sup>(1)</sup> = _P_ 0 _||_ . . . _||P_ ♢ _, with |P_ 0 _|_ = _Rs −_ 16 _, |Pi|_ = _Rs for_ 0 _< i_ = ♢ _and |P_ ♢ _| ≤ Rs._ 
+
+Next, the Motorist object receives the second message ( _A_<sup>(2)</sup> , _P_<sup>(2)</sup> ), where we assume that _R_<sup>_<u>|A</u>_</sup> _a−_<sup>(2</sup> _R_<sup>)</sup><sup>_<u>|</u>_</sup> _s_<sup>_<_</sup><sup>_<u>|P</u>_</sup> _R_<sup>(2</sup> _s_<sup>)</sup><sup>_<u>|</u>_.This is somehow the opposite case as the first message, because now</sup> the metadata is exhausted first, again in line with what Figure 1 suggests. Figure 8 illustrates this case for Π = 1. 
+
+Finally, the last message that the Motorist object receives is ( _A_<sup>(3)</sup> , ), containing only metadata. Figure 9 illustrates this case for Π = 1. Notice that the first block does not start 
+
+17 
+
+|0<sup>16</sup> _P_0|_A_0|0|_Rs_|_Rs_|_Ra_|
+|---|---|---|---|---|---|
+|_P_1|_A_1|0|_Rs_|_Rs_|_Ra_|
+||…|||||
+|_Px_|_A_△<br>0<sup>_∗_</sup>|0|_Rs_|_Rs_|_≤Ra_|
+|_Px_+1|0<sup>_∗_</sup>|0|_Rs_|_Rs_|_Rs_|
+||…|||||
+|_P_♢<br>0<sup>_∗_</sup>|0<sup>_∗_</sup>|16|_≤Rs_|_Rs_|_Rs_|
+
+**Figure 8** – _Input blocks for processing_ ( _A_<sup>(2)</sup> , _P_<sup>(2)</sup> ) _. We assume that A_<sup>(2)</sup> = _A_ 0 _||_ . . . _||A_ △ _, with |Ai|_ = _Ra − Rs for i_ =△ _and |A_ △ _| ≤ Ra − Rs. Similarly, we assume that P_<sup>(2)</sup> = _P_ 0 _||_ . . . _||P_ ♢ _, with |P_ 0 _|_ = _Rs −_ 16 _, |Pi|_ = _Rs for_ 0 _< i_ = ♢ _and |P_ ♢ _| ≤ Rs._ 
+
+with 0<sup>16</sup> , even if a tag was requested for the previous message, since metadata require no key stream output. 
+
+|_A_0||0|0|0|_Ra_|
+|---|---|---|---|---|---|
+|_A_1||0|0|0|_Ra_|
+||…|||||
+|_A_△<br>0<sup>_∗_</sup>||16|0|0|_≤Ra_|
+
+**Figure 9** – _Input blocks for processing_ ( _A_<sup>(3)</sup> , _P_<sup>(3)</sup> ) _with P_<sup>(3)</sup> _the empty string. We assume that A_<sup>(3)</sup> = _A_ 0 _||_ . . . _||A_ △ _, with |Ai|_ = _Ra for i_ =△ _and |A_ △ _| ≤ Ra._ 
+
+#### **1.7.3 Session of short messages** 
+
+Figure 10 illustrates a session with short messages. When the plaintext fits in the outer part and the metadata in the inner part, the user can encrypt and get a tag in just one call to the permutation per message. 
+
+|SUV1 0<br>0<sup>_∗_</sup>|||255|0|0|_≤Ra_|
+|---|---|---|---|---|---|---|
+|_P_<sup>(1)</sup><br>0<sup>_∗_</sup>|_A_<sup>(1)</sup>|0<sup>_∗_</sup>|16|_≤Rs_|_Rs_|_≤Ra_|
+|0<sup>16</sup> _P_<sup>(2)</sup><br>0<sup>_∗_</sup>|_A_<sup>(2)</sup>|0<sup>_∗_</sup>|16|_≤Rs_|_Rs_|_≤Ra_|
+|0<sup>16</sup> _P_<sup>(3)</sup><br>0<sup>_∗_</sup>|_A_<sup>(3)</sup>|0<sup>_∗_</sup><br>…|16|_≤Rs_|_Rs_|_≤Ra_|
+
+**Figure 10** – _A session with short messages. Here, we assume that |P_<sup>(1)</sup> _| ≤ Rs, |P_<sup>(</sup><sup>_i_)</sup> _| ≤ Rs −_ 16 _for i >_ 1 _, and |A_<sup>(</sup><sup>_i_)</sup> _| ≤ Ra − Rs for all i._ 
+
+#### **1.7.4 Parallelized message and knot** 
+
+As a last illustration, we display the processing of a message in a parameterized instance, including a knot. Figure 11 gives the input blocks when Π = 4 for a message ( _A_ , _P_ ) that can be processed in 2Π calls to the permutation before the knot. Notice that all pistons always have the same value for Inject Start. Hence, even if _A_ 6 does not have a plaintext counterpart, we have Inject Start = _Rs_ since other pistons process some plaintext. 
+
+18 
+
+|0<sup>16</sup> _P_0|_A_0|0|_Rs_|_Rs_|_Ra_|
+|---|---|---|---|---|---|
+|_P_1|_A_1|0|_Rs_|_Rs_|_Ra_|
+|_P_2|_A_2|0|_Rs_|_Rs_|_Ra_|
+|_P_3|_A_3|0|_Rs_|_Rs_|_Ra_|
+|_P_4|_A_4|32|_Rs_|_Rs_|_Ra_|
+|_P_5<br>0<sup>_∗_</sup>|_A_5|32|_≤Rs_|_Rs_|_Ra_|
+|0<sup>_∗_</sup>|_A_6<br>0<sup>_∗_</sup>|32|0|_Rs_|_≤Ra_|
+|0<sup>_∗_</sup>|0<sup>_∗_</sup>|32|0|_Rs_|_Rs_|
+|_T_<sup>_′_</sup><br>0<sup>_T′_</sup><br>1<sup>_T′_</sup><br>2<sup>_T′_</sup><br>3<br>0<sup>_∗_</sup>||16|0|0|128|
+|_T_<sup>_′_</sup><br>0<sup>_T′_</sup><br>1<sup>_T′_</sup><br>2<sup>_T′_</sup><br>3<br>0<sup>_∗_</sup>||255|0|0|128|
+|_T_<sup>_′_</sup><br>0<sup>_T′_</sup><br>1<sup>_T′_</sup><br>2<sup>_T′_</sup><br>3<br>0<sup>_∗_</sup>||255|0|0|128|
+|_T_<sup>_′_</sup><br>0<sup>_T′_</sup><br>1<sup>_T′_</sup><br>2<sup>_T′_</sup><br>3<br>0<sup>_∗_</sup>||255|0|0|128|
+
+**Figure 11** – _Input blocks for processing a message_ ( _A_ , _P_ ) _when_ Π = 4 _. In this figure, we assume that P_ = _P_ 0 _||_ . . . _||P_ 5 _, with |P_ 0 _|_ = _Rs −_ 16 _, |Pi|_ = _Rs for_ 1 _≤ i ≤_ 4 _and |P_ 5 _| ≤ Rs. Similarly, we assume that A_ = _A_ 0 _||_ . . . _||A_ 6 _, with |Ai|_ = _Ra − Rs for_ 0 _≤ i ≤_ 5 _and |A_ 6 _| ≤ Ra − Rs. The chaining values are assumed to be_ 32 _-byte long, and therefore we see that EOM_ = 32 _a�er absorbing the last blocks of message. Together, the chaining values make up a_ 128 _-byte string T_ 0<sup>_′||T_</sup> 1<sup>_′||T_</sup> 2<sup>_′||T_</sup> 3<sup>_′._</sup> 
+
+19 
+
+## **2** 
+
+In this section we provide a definition of the parameterized K����authenticated encryption scheme, its five named instances parameters fixed and the underlying permutations and specify the security goals. 
+
+### **2.1 The K�����-** _p_ **permutations** 
+
+The K�����- _p_ permutations are derived from the K�����- _f_ permutations [4] and have a tunable number of rounds. A K�����- _p_ permutation is defined by its width _b_ = 25 _×_ 2<sup>_ℓ_</sup> , with _b ∈{_ 25, 50, 100, 200, 400, 800, 1600 _}_ , and its number of rounds _n_ r. In a nutshell, K�����- _p_ [ _b_ , _n_ r] consists in the application of the _last n_ r rounds of K�����- _f_ [ _b_ ]. When _n_ r = 12 + 2 _ℓ_ , K�����- _p_ [ _b_ , _n_ r] = K�����- _f_ [ _b_ ]. 
+
+The permutation K�����- _p_ [ _b_ , _n_ r] is described as a sequence of operations on a state _a_ that is a three-dimensional array of elements of GF(2), namely _a_ [5, 5, _w_ ], with _w_ = 2<sup>_ℓ_</sup> . The expression _a_ [ _x_ , _y_ , _z_ ] with _x_ , _y ∈_ **Z** 5 and _z ∈_ **Z** _w_ , denotes the bit at position ( _x_ , _y_ , _z_ ). It follows that indexing starts from zero. The mapping between the bits of _s_ and those of _a_ is _s_ [ _w_ (5 _y_ + _x_ ) + _z_ ] = _a_ [ _x_ , _y_ , _z_ ]. Expressions in the _x_ and _y_ coordinates should be taken modulo 5 and expressions in the _z_ coordinate modulo _w_ . We may sometimes omit the [ _z_ ] index, both the [ _y_ , _z_ ] indices or all three indices, implying that the statement is valid for all values of the omi�ed indices. 
+
+K�����- _p_ [ _b_ , _n_ r] is an iterated permutation, consisting of a sequence of _n_ r rounds R, indexed with _i_ r from 12 + 2 _ℓ − n_ r to 12 + 2 _ℓ −_ 1. Note that _i_ r, the round number, does not necessarily start from 0. A round consists of five steps: 
+
+The additions and multiplications between the terms are in GF(2). With the exception of the value of the round constants RC[ _i_ r], these rounds are identical. The round constants are given by (with the first index denoting the round number) 
+
+and all other values of RC[ _i_ r][ _x_ , _y_ , _z_ ] are zero. The values rc[ _t_ ] _∈_ GF(2) are defined as the output of a binary linear feedback shi�register (LFSR): 
+
+Note that the round index _i_ r can be considered modulo 255, the period of the LFSR above. 
+
+20 
+
+### **2.2 The key pack** 
+
+We encode the key in what we call a _key pack_ . Its purpose is to have a uniform way of encoding a secret key as prefix of an SUV. 
+
+The key pack makes use of _simple padding_ denoted pad10<sup>_∗_</sup> [ _r_ ]( _|M|_ ). This padding rule returns a bit string 10<sup>_q_</sup> with _q_ = ( _−|M| −_ 1) mod _r_ . When _r_ is divisible by 8 and _M_ is a sequence of bytes, then pad10<sup>_∗_</sup> [ _r_ ]( _|M|_ ) returns the byte string 0x01 0x00<sup>(</sup><sup>_q−_7)/8</sup> . For a key _K_ , we define a _key pack_ of _ℓ_ bytes as 
+
+keypack( _K_ , _ℓ_ ) = enc8( _ℓ_ ) _||K||_ pad10<sup>_∗_</sup> [8 _ℓ −_ 8]( _|K|_ ), 
+
+where the length of the key _K_ is limited to 8( _ℓ −_ 1) _−_ 1 bits and with _ℓ<_ 256. That is, the key pack consists of 
+
+- a first byte indicating the full length of the key pack in bytes, followed by 
+
+- the key itself, followed by 
+
+- simple padding. 
+
+For instance, the 64-bit key _K_ = 0x01 0x23 0x45 0x67 0x89 0xAB 0xCD 0xEF yields 
+
+keypack( _K_ , 18) = 0x12 0x01 0x23 0x45 0x67 0x89 0xAB 0xCD 0xEF 0x01 0x00<sup>8</sup> . 
+
+### **2.3** 
+
+K����makes use of M�������[ _f_ , Π, _W_ , _c_ , _τ_ ], with _f_ an instance of K�����- _p_ . We have: 
+
+K����[ _b_ , _n_ r, Π, _c_ , _τ_ ] = M�������[ _f_ , Π, _W_ , _c_ , _τ_ ], 
+
+with _f_ = K�����- _p_ [ _b_ , _n_ r] and _W_ = max( 25<sup>_<u>b</u>_, 8).</sup> The SUV consists of keypack( _K_ , _ℓ_ k) _||N_ with _ℓ_ k =<sup>_<u>W</u>_</sup> 8 ⌈ _<u>cW</u>_ <u>+9</u> ⌉ and _N ∈_ **Z** 2<sup>_∗_with no limi-</sup> tation on its length. 
+
+### **2.4 Named instances of K����** 
+
+We have five named instances of K����, taking on specific parameter values in the available range. For all five instances, we have _n_ r = 12, _c_ = 256 and _τ_ = 128. In order of increasing state sizes, the instances are: 
+
+|Name|_b_|Π|Main use case|2nd use case|
+|---|---|---|---|---|
+|R����K����|800|1|defense-in-depth|lightweight|
+|L���K����|1600|1|defense-in-depth|high performance|
+|S��K����|1600|2|defense-in-depth|high performance|
+|O����K����|1600|4|defense-in-depth|high performance|
+|L����K����|1600|8|defense-in-depth|highperformance|
+
+L���K����is the primary recommendation. For R����K����, _W_ = 32 and the length of the key pack _ℓ_ k is 36 bytes. For the other instances, _W_ = 64 and _ℓ_ k = 40 bytes. 
+
+All these instances take a variable-length public message number (or nonce) _N_ , but no private message number. If the data element _N_ has to have a fixed length, we propose that it takes 58 bytes for R����K����and 150 bytes for the other instances. Note that our security claim covers any length of _N_ . These lengths are chosen so that keypack( _K_ , _ℓ_ k) _||N_ and the two bytes of diversification all fit in exactly one block. 
+
+21 
+
+||K����|
+|---|---|
+|plaintext confdentiality|min(_c_/2,_|K|_)|
+|<br>plaintext integrity|<br>min(_c_/2,_|K|_,_|T|_)|
+|<br>associated data integrity|min(_c_/2,_|K|_,_|T|_)|
+|public message number integrity|min(_c_/2, _|K|_, _|T|_)|
+
+**Table 1** – _Claimed security strength for K����_ 
+
+All K����instances produce a 128-bit MAC, which can be truncated by the user if desired. If not truncated, the gap between the ciphertext and the plaintext length is exactly 128 bits. The key size is variable, with a minimum of 128 bits for the targeted security, and up to a maximum of at least 256 bits (determined by _ℓ_ k), as a possible countermeasure against multi-target a�acks. 
+
+L���K����can absorb up to 192 bytes of metadata per call to _f_ or up to 168 of plaintext, with additionally 24 bytes of metadata. For S��, O����and L����K����, these sizes are multiplied by Π for every Π parallel calls to _f_ . R����K����may be of interest for its smaller state size. It can absorb up to 96 bytes of metadata per call to _f_ or up to 68 of plaintext, with additionally 28 bytes of metadata. 
+
+The K����instances with Π _>_ 1 can be interesting in a number of cases, in particular for exploiting SIMD architectures that the parallel evaluation of the K�����round function can benefit from [6]. S��K����best exploits 128-bit SIMD, while O����K����best exploits 256-bit SIMD and L����K����512-bit SIMD. 
+
+### **2.5 Security goals** 
+
+Before stating our security goals, we define some terminology related to a�acks and resistance against them. A�acks against keyed cryptographic schemes make use of two types of resources: 
+
+- **Data complexity** The total amount of data processed by the keyed cryptographic scheme. This is sometimes also called the online complexity. For sponge-based crypto we quantify it by _M_ : the number of evaluations of the permutation _f_ by the keyed cryptographic scheme under a�ack. 
+
+- **Computational complexity** The total computational effort of the a�ack. this is sometimes also called the offline complexity. For sponge-based crypto we quantify it by _N_ : the computation where the evaluation of the underlying permutation _f_ is considered as the unit. In generic a�acks _N_ corresponds to the number of evaluations of _f_ or _f_<sup>_−_1</sup> . 
+
+Although data and computational complexity are very different, they are counted using the same unit and we call their sum _M_ + _N_ the _total complexity of an a�ack_ . 
+
+**Definition 1** (security strength) **.** _We say a cryptographic scheme has security strength s if the success probability of an a�ack with total complexity M_ + _N is below_ 2<sup>_−s_</sup> ( _M_ + _N_ ) _._ 
+
+> Our security claims for K����are summarized in Table 1 with _|T|_ is the tag size (i.e., _|T|_ = _τ_ , unless truncated). In our named instances we target security strength 128 bits by taking _c_ = 256, _τ_ = 128 and _|K| ≥_ 128. 
+
+The security claim in Table 1 assumes adversaries targeting a single key. In multitarget a�acks against K����, the resistance against exhaustive keys may erode from _|K|_ 
+
+22 
+
+to _|K| −_ log2 _n_ with _n_ the number of targets. This is the case if _n_ K����instances are loaded with different keys but the same nonce _N_ , and an a�acker has access to their output when processing the same input. Note that if an upper limit to _n_ is known, one can have a security strength of 128 bits by taking sufficiently long keys: _|K| ≥_ 128 + log2 _n_ max. Alternatively, an option that avoids erosion without increasing the length of keys consists in imposing universal nonce uniqueness (see also the definition of _q_ iv in Section 3.2). By this we mean that not only the combination ( _K_ , _N_ ) must be unique, but _N_ has to be unique among all K����instances. Many use cases actually allow this. For example, one can take as nonce the combination of the unique IDs of the two communicating devices and a strictly incrementing session counter. 
+
+#### **2.5.1 Security in the case of misuse** 
+
+The security strengths claimed in Table 1 are for the _nominal case_ as defined here. 
+
+**Definition 2** (nominal case security) **.** _We call the_ nominal case _security of a K����instance one in which the nonce requirement on the data element N (mapping to public message number in CAESAR terminology) is enforced and that only releases decrypted ciphertext upon unwrapping if the cryptogram has a valid tag._ 
+
+We also discuss the security of less disciplined implementations as covered by the _misuse case_ . 
+
+**Definition 3** (misuse case security) **.** _We call the_ misuse case _security of a K����instance one in which the nonce requirement on the data element N (mapping to public message number in CAESAR terminology) may be violated and that may release decrypted ciphertext upon unwrapping even if the cryptogram has no valid tag._ 
+
+In the misuse case security degrades and hence we strongly advise implementers and users to respect the nonce requirement on _N_ at all times and never release unverified decrypted ciphertext. We detail security degradation in the following paragraphs. 
+
+A nonce-violation on _N_ in general breaks confidentiality of part of the plaintext. In particular, two Sessions that have the same input sequence ( _K_ , _N_ , metadata fragments, plaintext fragments) will result in the same output (ciphertext, tag). We call such a pair of sessions in-sync. Clearly, in-sync sessions leak equality of inputs and hence also plaintexts. As soon as in-sync sessions get different input blocks, they lose synchronicity. If these input blocks are plaintext blocks, the corresponding ciphertext blocks leak the bitwise difference of the corresponding plaintext blocks. In case the parallelism is larger than 1, this happens independently in each Piston. In short, Pistons that are in-sync in two different sessions leak equality of input up to the first differing block and leak the bitwise difference of this differing block. We call this the _nonce-misuse leakage_ . 
+
+Release of unverified decrypted ciphertext also has an impact on confidentiality as it allows an adversary to harvest key stream that may be used in the future by legitimate parties. An adversary can harvest Π key stream blocks. 
+
+Nonce violation and release of unverified decrypted ciphertext have no consequences for integrity and do not put the key in danger for K����. With the exception of key stream harvesting and nonce-misuse leakage, the claims in Table 1 remain valid. 
+
+### **3.1 The full-state keyed duplex construction** 
+
+We define FSKD in Algorithm 4. It calls a _b_ -bit permutation _f_ and operates on a _b_ -bit state. The state is initialized with the concatenation of a secret key _K_ and a string _σ_ 0 with _|K|_ + _|σ_ 0 _|_ = _b_ . Then it supports duplexing calls, each one taking a _b_ -bit input block _σi_ and returning an _r_ -bit output block _Zi_ . The FSKD is illustrated in Figure 12. 
+
+**Algorithm 4** The full-state keyed duplex construction FSKD[ _<u>f</u>_ , _r_ <u>]</u> 
+
+**Require:** _r < b_ **Instantiation:** FSKD _←_ FSKD[ _f_ , _r_ ] State: FSKD. _s ←_ 0<sup>_b_</sup> 
+
+**Interface:** _Z_ = FSKD.Init( _K_ , _σ_ 0) with _K ∈_ **Z** 2<sup>_∗_,</sup><sup>_σ_0</sup><sup>_∈_</sup><sup>**Z**</sup> 2<sup>_b−|K|_</sup> and _Z ∈_ **Z** 2<sup>_r_</sup> _s ← K||σ_ 0 _s ← f_ ( _s_ ) **return** _⌊s⌋r_ 
+
+**Interface:** _Z_ = FSKD.Duplexing( _σ_ ) with _σ ∈_ **Z** 2<sup>_b_, and</sup><sup>_Z∈_</sup><sup>**Z**</sup> 2<sup>_r_</sup> _s ← s ⊕ σi s ← f_ ( _s_ ) **return** _⌊s⌋r_ 
+
+<!-- Start of picture text -->
+K σ 0 Z 0 σ 1 Z 1 σ 2 Z 2<br>0 f outer f f …<br>inner<br>init duplexing duplexing<br><!-- End of picture text -->
+
+**Figure 12** – _The full-state keyed duplex construction_ 
+
+Clearly, the operation of Motorist can be expressed in terms of calls to FSKD objects. 
+
+24 
+
+### **3.3 Decodability of Motorist** 
+
+**Lemma 1.** _For any sequence of queries Q to a Motorist instance that does not result in an error, and knowing when a knot occurs, the SUV and the full sequence of messages can be unambiguously recovered from the input block sequences to its Piston objects._ 
+
+_Proof._ (sketch) As specified in the Engine.W���() interface, the Engine will make exactly one single inject call and at most one crypt call in between spark calls. Moreover, at the end of processing a message, an SUV or a knot operation, it will indicate this in the spark call and retrieve tags. So, in each input block, each Piston sets its four fragment offsets to the correct values. As explained in Section 1.4, the EOM allows delimiting the last input blocks containing SUV, the last input block containing message input and the last input blocks containing chaining values. In combination with EOM for the previous input block, the offset Crypt End allows determining the plaintext fragments in an an input block. Metadata, SUV or chaining value fragments can be determined with offsets Inject Start and Inject End. Once all fragments are identified, the SUV, plaintext, metadata and chaining values of messages can be reconstructed by simply concatenating the fragments. _⊓⊔_ 
+
+### **3.6 K����variants with 256-bit security strength** 
+
+Some users may wish to use an authentication encryption scheme in a consistent combination with cryptographic functions of 256-bit security strength. We feel that, as such, 256bit security does not provide a practical and tangible security improvement over 128-bit security. A cipher that stands by its claim of 128-bit security provides enough protection against any adversary in the foreseeable future. 
+
+This being said, inspection of Theorem 3 reveals a generic security strength can be achieved of 256 bits for the nominal case by all our named K����instances except R���� K����. It suffices to increase the tag length to 256 bits. To achieve 256 bits of security strength against shortcut a�acks, we recommend increasing the number of rounds in K�����- _p_ from 12 to 14. 
+
+## **4 Using K����in the context of CAESAR** 
+
+In this section we explain how to use K����in the context of the CAESAR competition. 
+
+### **4.1 Specification and security goals** 
+
+The specifications can be found in Section 2 and the security goals in Section 2.5. 
+
+29 
+
+### **4.6 CAESAR use cases** 
+
+For all 5 named K����instances, we primarily target Use Case 3: defense in depth. In the mail of the CAESAR secretary dated 16 July 2016 20:36:10, the following criteria were listed: 
+
+1. critical: authenticity despite nonce misuse 
+
+2. desirable: limited privacy damage from nonce misuse 
+
+3. desirable: authenticity despite release of unverified plaintexts 
+
+4. desirable: limited privacy damage from release of unverified plaintexts 
+
+5. desirable: robustness in more scenarios; e.g., huge amounts of data 
+
+##### 
+
+Points 2 and 4 deserve some explanations. In case of nonce misuse or release of deciphered ciphertext, the _limited privacy damage_ consists of the leading plaintext block equality, of the first differing plaintext block differences and of key stream block harvesting. The features of K����allow the user to easily prevent the misuse cases. 
+
+- The session mechanism reduces the need for nonces. O�en, exchanged messages can be naturally grouped in a session, such as in a network connection, a smartcard transaction or a chat application. In many protocols, the key is a one-time session key, in which case no nonce is needed at all. When it is instead a long-term key, the nonce is required only per session. 
+
+- K����supports a variable-length nonce field _N_ allowing users to put multiple data elements to reduce the risk of nonce repetition. For robustness, this may include elements related to the context of the session, e.g., date and time, identity of sender and identity of receiver, session number of communication, etc. 
+
+- Key stream block harvesting can be excluded by using the _tag on session setup_ feature of Motorist. When starting up Motorist for unwrapping, one can set the tag flag, requiring the presence of a tag in the startup. Without this tag, Motorist will refuse to start up and hence not return so-called deciphered ciphertext. This tag is supposed to come from the wrapping Motorist object. Without it, the only thing an adversary can do to obtain key stream blocks from an unwrapping Motorist object is take a guess at this tag value. 
+
+For Point 5, we highlight the following robustness features of K����. 
+
+- Even in the misuse case, an adversary cannot retrieve the internal state nor the key. 
+
+31 
+
+- Processing huge amounts of data does not result in security breakdown, even in the misuse case. In particular, the 2<sup>64</sup> blocks birthday bound observed in AES-based modes does not play for any of the named K����instances. 
+
+- side-channel a�acks. 
+
+   - Motorist lends itself for protection against side channel a�acks. As opposed to block cipher modes, there are no round keys being used during operation that can be a�acked. The security is based on the secrecy of the evolving inner states of the Piston objects. 
+
+   - Motorist lends itself for protection against differential fault analysis in the nominal case. In wrapping, the unique nonce makes that it is very unlikely that differences due to faults a�er the starting phase can be exploited. In unwrapping, the fault will with high probability trigger a tag to be invalid. 
+
+   - K�����- _p_ lends itself to protection against side channels as it can easily be implemented in constant-time and is suitable for masking and threshold schemes. 
+
+   - The forget mechanism in Motorist provides forward secrecy. Even if a sidechannel a�ack would reveal the entire state, the a�acker cannot recover the state prior to the forget point. A fortiori, one cannot go back to the key. 
+
+For all 5 named K����instances except R����K����, we also target Use Case 2: highperformance applications, as they are 
+
+- efficient on 64-bit CPUs and very efficient on dedicated hardware; 
+
+- efficient on 32-bit CPUs; 
+
+- constant-time when message length is constant. 
+
+Finally, for R����K����we also address Use Case 1: lightweight applications, as it: 
+
+- fits into small hardware area and small code for 8-bit and 32-bit CPU; 
+
+- has a natural ability to protect against side-channel a�acks; 
+
+- offers competitive hardware performance, including energy/bit; 
+
+- is relatively fast on 8-bit CPU; 
+
+- can be combined with a sponge-based hash function based on K�����- _p_ [800]. 
+
+## **A Change log** 
+
+### **A.1 From 1.0 to 1.1** 
+
+Only Section 4.3 (“Features”) changed to include a brief comparison with AES-GCM. 
+
+33 
+
+### **A.2 From 1.1 to 1.2** 
+
+The main change is the correction of the expressions for the advantage of forging ciphertext-tag pairs in two theorems. 
+
+In both cases a term 2<sup>_−t_</sup> that was there before has been replaced by 2<sup>_<u>St</u>_,with</sup><sup>_t_isthe</sup> tag length and _S_ the number of submi�ed tags. This term expresses the probability of tag forging by pure chance, in the former case in a single a�empt and in the la�er case in _S_ a�empts. In the new expression we assume the adversary gets one forgery a�empt for each submi�ed tag, while the old expression carried the implication that only a single tag forging a�empt is considered. We thank Bart Mennink for bringing this error to our a�ention. 
+
+We also added a section with a reference to the available implementations. 
+
+### **A.3 From 1.2 to 2.0** 
+
+The mode underlying K����has been completely re-factored and so has the document. K����remains an authenticated encryption scheme supporting sessions, based on 12round K�����- _p_ permutations and the named instances still have security strength 128 bits. We turned K����into a parameterized authenticated encryption scheme, supporting a wide range of parameters. The named instances, to which we added one named L���� K����, are defined by fixing parameters in the general K����scheme. 
+
+### **A.4 From 2.0 to 2.1** 
+
+We added Figures 1–2 in the original text, and the new Section 1.7 with further illustrations and examples (Figures 3–11). 
+
+We added Section 2.6 on implementations. 
+
+No change has been made to any of the algorithms. The Motorist mode, the K���� functions and their security claims remain unchanged. 
+
+### **A.5 From 2.1 to 2.2** 
+
+The changes are: 
+
+- In Motorist, the tag length is now limited to the capacity length. This does not affect the K����functions. 
+
+- The definitions of Piston, Engine and Motorist have been simplified to ease understanding by the reader. In particular, Piston and Engine have slightly different behaviours and interfaces. There are however no difference at the Motorist interface and its behaviour remains fully identical to the previous version. This means that there is no change in the test vectors for K����and that there is no impact on existing optimized implementations. It is however suggested to update reference implementations that follow closely the Piston and Engine algorithms to match the current description. The most important changes are summarized below. 
+
+   - In Motorist.W���(), the loops and calls to Engine.C����() and Engine.I�����() are now replaced by a single loop that calls the merged interface Engine.W���() until both streams are exhausted. 
+
+   - In Engine, the _Et_ a�ribute is now stored in each Piston object, which now stores separate crypt ( _ωC_ ) and inject ( _ωI_ ) offsets. These offsets are updated by Piston. 
+
+34 
+
+   - In Engine, the state machine a�ribute �����is removed. Engine now relies on Motorist for the consistency of the operation sequence. 
+
+   - The Engine.C����() and Engine.I�����() interfaces are now merged into a single Engine.W���() interface. 
+
+   - The flags ��������F���and ���F���at Piston interface are removed. These are now managed internally by Piston. 
+
+   - Piston.S����() now only applies _f_ to the Piston state. 
+
+   - The se�ing of offset EOM is moved to Piston.G��T��(), which now also applies _f_ to the Piston state before extracting the tag bytes and updating the crypt 
+
+- Sections 2.5 and 3 have been restructured and updated with new results on generic security and with the latest third-party cryptanalysis. 
+
+- We added Section 4.6 as required for the CAESAR competition. 
+
+The K����functions and their security claims remain unchanged. 
+
+35

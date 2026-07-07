@@ -1,5 +1,22 @@
 # SUPERCOP benchmark suite (downloaded, versioned by date)
 supercop-*/
-_*
+
+# 데이터 구축 중간물 / 캐시 / 로그 (재생성 가능, 실험 실행엔 불필요)
+# ※ 실행에 필요한 스펙 데이터 _spec_cut/, _desc/ 는 무시하지 않음 → 커밋됨
+_fetch_cache/
+_docs_md/
+_funcs/
+_pdf_test/
+_manual_pdfs/
+_m_out/
+__pycache__/
+_*.py
+_*.log
+_*.jsonl
+_m_rows.json
+_m_worklist.json
+_pm_class.json
+_m_instructions.md
+
 pdfs/
 cryptoforge/api_key.txt
