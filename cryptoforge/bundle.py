@@ -34,10 +34,12 @@ def _index(path, keyfields=('category', 'algorithm')):
 _FUNCS = None
 _DESC = None
 def _load():
+    # 원자적 세팅: 둘 다 로컬로 읽은 뒤 한 번에 대입 (스레드 병렬시 half-init race 방지).
     global _FUNCS, _DESC
-    if _FUNCS is None:
-        _FUNCS = _index(config.FUNCS_JSONL)
-        _DESC = _index(config.DESC_JSONL)
+    if _DESC is None:
+        f = _index(config.FUNCS_JSONL)
+        d = _index(config.DESC_JSONL)
+        _FUNCS, _DESC = f, d
 
 
 def flat_api_h(constants):

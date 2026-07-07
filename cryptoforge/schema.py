@@ -66,10 +66,12 @@ def validate_plan(plan, bundle):
             if d not in pathset and d not in external:
                 errs.append(f'{f.get("path")}: depends_on 미존재 파일 {d}')
 
-    # build_order = paths 순열 + 위상 일관성
+    # build_order = paths 순열 + 위상 일관성 (외부 헤더는 양쪽에서 무시 — 모델이
+    # api.h/crypto_<op>.h 를 files 에 넣어도 빌드가 제공하므로 관용)
     if isinstance(order, list):
-        order = [x for x in order if x not in external]   # 외부 헤더 무시
-        if set(order) != pathset:
+        order = [x for x in order if x not in external]
+        internal = pathset - external
+        if set(order) != internal:
             errs.append('build_order 가 files 집합과 불일치')
         else:
             pos = {p: i for i, p in enumerate(order)}

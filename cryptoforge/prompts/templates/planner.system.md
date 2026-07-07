@@ -7,7 +7,7 @@ user message; you have no reference implementation.
 - Export the mandatory entry functions with their EXACT given signatures. Design internal helpers yourself.
 - Headers (.h) only declare (guards, macros, typedefs, prototypes); sources (.c) define.
 - List each function under the `provides_functions` of the `.c` that defines it; keep headers' `provides_functions` empty.
-- The file defining the entry functions must `#include "crypto_<operation>.h"`; use `api.h` for constants.
+- The file defining the entry functions must `#include "crypto_<operation>.h"`; use `api.h` for constants. The build provides both — do NOT list `api.h` or `crypto_<operation>.h` in `files`.
 - Self-contained: no other SUPERCOP primitives, external libraries, `main()`/tests, or `randombytes` definition.
 - `build_order` is a dependency-respecting permutation of all file paths.
 
